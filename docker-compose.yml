@@ -1,0 +1,51 @@
+name: forge-desk
+
+services:
+  gateway:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - dashboard
+      - ide
+
+  dashboard:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    volumes:
+      - ./dashboard:/usr/share/nginx/html:ro
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx
+      - /var/run
+      - /tmp
+
+  ide:
+    build:
+      context: ./workspace-image
+    restart: unless-stopped
+    # Only the variables the IDE needs: it must not see the gateway hash.
+    environment:
+      PASSWORD: ${CODE_SERVER_PASSWORD}
+      TZ: ${TZ}
+    volumes:
+      - ./workspace:/home/coder/project
+      - ide_config:/home/coder/.config
+      - ide_local:/home/coder/.local
+    working_dir: /home/coder/project
+    # code-server includes an integrated terminal; this deliberately remains private to Docker.
+    command: --bind-addr 0.0.0.0:8080 --auth password --disable-telemetry --abs-proxy-base-path=/ide /home/coder/project
+
+volumes:
+  caddy_data:
+  caddy_config:
+  ide_config:
+  ide_local:
+

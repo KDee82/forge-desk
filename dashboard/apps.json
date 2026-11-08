@@ -1,0 +1,7 @@
+{
+  "apps": [
+    { "name": "Dev server", "description": "Vite, Next.js, React — whatever you run on port 3000", "port": 3000 },
+    { "name": "Python / API", "description": "Flask, FastAPI or http.server on port 8000", "port": 8000 },
+    { "name": "Preview site", "description": "Vite default preview port 5173", "port": 5173 }
+  ]
+}

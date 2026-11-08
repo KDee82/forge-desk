@@ -1,0 +1,32 @@
+{
+	email admin@{$FORGE_DOMAIN}
+}
+
+# Shared login for every protected route.
+(gate) {
+	basic_auth {
+		forge {$FORGE_PASSWORD_HASH}
+	}
+}
+
+{$FORGE_DOMAIN} {
+	encode zstd gzip
+
+	# Public, unauthenticated liveness probe (used by the dashboard status pill).
+	handle /healthz {
+		respond "ok" 200
+	}
+
+	# code-server lives under /ide/. The prefix is stripped before proxying.
+	redir /ide /ide/ permanent
+
+	handle_path /ide/* {
+		import gate
+		reverse_proxy ide:8080
+	}
+
+	handle {
+		import gate
+		reverse_proxy dashboard:80
+	}
+}

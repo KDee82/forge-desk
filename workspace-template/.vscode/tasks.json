@@ -1,0 +1,16 @@
+{
+  // Opens a terminal automatically whenever this folder is opened in the workspace.
+  // The first time, code-server asks to "Allow automatic tasks" — choose Allow.
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Terminal",
+      "type": "shell",
+      "command": "bash -l",
+      "isBackground": true,
+      "presentation": { "reveal": "always", "panel": "dedicated", "focus": true },
+      "runOptions": { "runOn": "folderOpen" },
+      "problemMatcher": []
+    }
+  ]
+}
