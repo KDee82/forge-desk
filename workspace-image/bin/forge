@@ -1,0 +1,29 @@
+#!/bin/bash
+# forge: small helpers for working inside Forge Desk from the terminal.
+export DISPLAY="${DISPLAY:-:1}"
+case "${1:-help}" in
+  open)
+    shift
+    [ -n "$1" ] || { echo "Usage: forge open <web address>" >&2; exit 2; }
+    nohup forge-browser "$@" >/dev/null 2>&1 &
+    echo "Opening $1 in the desktop browser." ;;
+  shot)
+    out="${2:-screenshot-$(date +%Y%m%d-%H%M%S).png}"
+    scrot --overwrite "$out" && echo "Saved $out" ;;
+  ports)
+    ss -ltnpH | awk '{print $4, $6}' | sort -u ;;
+  status)
+    supervisorctl status ;;
+  restart)
+    [ -n "$2" ] || { echo "Usage: forge restart <desk|code|display|desktop>" >&2; exit 2; }
+    supervisorctl restart "$2" ;;
+  *)
+    cat <<'HELP'
+forge open <address>   Open a page in the desktop browser
+forge shot [file.png]  Save a screenshot of the Linux desktop
+forge ports            List the ports that apps are listening on
+forge status           Show whether each Forge Desk service is running
+forge restart <name>   Restart one service: desk, code, display or desktop
+HELP
+    ;;
+esac

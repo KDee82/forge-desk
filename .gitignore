@@ -2,4 +2,7 @@
 data/
 workspace/
 .DS_Store
+node_modules/
 
+# Brand reference images (large, not needed at runtime)
+Forge Desk *.png

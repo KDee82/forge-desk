@@ -6,46 +6,35 @@ services:
     restart: unless-stopped
     env_file: .env
     ports:
-      - "80:80"
-      - "443:443"
+      - "127.0.0.1:8081:80"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
     depends_on:
-      - dashboard
-      - ide
+      - desk
 
-  dashboard:
-    image: nginx:1.27-alpine
-    restart: unless-stopped
-    volumes:
-      - ./dashboard:/usr/share/nginx/html:ro
-    read_only: true
-    tmpfs:
-      - /var/cache/nginx
-      - /var/run
-      - /tmp
-
-  ide:
+  # The whole workspace: web desktop server, terminals, code-server, Linux desktop, browser.
+  desk:
     build:
-      context: ./workspace-image
+      context: .
+      dockerfile: workspace-image/Dockerfile
     restart: unless-stopped
-    # Only the variables the IDE needs: it must not see the gateway hash.
     environment:
-      PASSWORD: ${CODE_SERVER_PASSWORD}
+      FORGE_PASSWORD_HASH: ${FORGE_PASSWORD_HASH}
       TZ: ${TZ}
+    # Chromium needs more shared memory than Docker's 64 MB default.
+    shm_size: "1gb"
     volumes:
       - ./workspace:/home/coder/project
       - ide_config:/home/coder/.config
       - ide_local:/home/coder/.local
-    working_dir: /home/coder/project
-    # code-server includes an integrated terminal; this deliberately remains private to Docker.
-    command: --bind-addr 0.0.0.0:8080 --auth password --disable-telemetry --abs-proxy-base-path=/ide /home/coder/project
+      # The interface is served live from this folder: edit it and reload, no rebuild.
+      - ./dashboard:/opt/forge-desk/dashboard:ro
+    # Deliberately no published ports: the only way in is through the gateway.
 
 volumes:
   caddy_data:
   caddy_config:
   ide_config:
   ide_local:
-

@@ -1,0 +1,19 @@
+#!/bin/bash
+# Opens Chromium on the Linux desktop. Automation scripts can attach to this same
+# browser at http://127.0.0.1:9222 (see the Automations window).
+export DISPLAY="${DISPLAY:-:1}"
+PROFILE="$HOME/.config/forge-browser"
+BIN="$(node -e "console.log(require('playwright').chromium.executablePath())" 2>/dev/null)"
+if [ -z "$BIN" ] || [ ! -x "$BIN" ]; then
+  echo "Chromium is not installed. Run: playwright install chromium" >&2
+  exit 1
+fi
+mkdir -p "$PROFILE"
+# A stale lock from a previous container would make Chromium refuse the profile.
+if ! pgrep -f -- "--user-data-dir=$PROFILE" >/dev/null 2>&1; then
+  rm -f "$PROFILE"/Singleton*
+fi
+# --no-sandbox: Chromium's own sandbox needs kernel privileges this container does not have.
+exec "$BIN" --no-sandbox --test-type --no-first-run --no-default-browser-check \
+  --remote-debugging-port=9222 --remote-debugging-address=127.0.0.1 \
+  --user-data-dir="$PROFILE" --start-maximized "$@"

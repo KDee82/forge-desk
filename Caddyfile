@@ -1,32 +1,24 @@
 {
 	email admin@{$FORGE_DOMAIN}
-}
-
-# Shared login for every protected route.
-(gate) {
-	basic_auth {
-		forge {$FORGE_PASSWORD_HASH}
+	# The host nginx sits in front of this container, so take the visitor's real
+	# address from it. Safe because the gateway is published on 127.0.0.1 only.
+	servers {
+		trusted_proxies static private_ranges
 	}
 }
 
-{$FORGE_DOMAIN} {
+# TLS is terminated by the host nginx (ports 80/443 already serve the Raven
+# dashboard), which proxies to this container on 127.0.0.1:8081.
+#
+# Sign-in is handled by Forge Desk itself (one password, a session cookie), so
+# there is no basic_auth here any more. Everything, including code-server at
+# /ide/ and web apps at /proxy/<port>/, goes through that login.
+http://{$FORGE_DOMAIN} {
 	encode zstd gzip
 
-	# Public, unauthenticated liveness probe (used by the dashboard status pill).
-	handle /healthz {
-		respond "ok" 200
-	}
-
-	# code-server lives under /ide/. The prefix is stripped before proxying.
-	redir /ide /ide/ permanent
-
-	handle_path /ide/* {
-		import gate
-		reverse_proxy ide:8080
-	}
-
-	handle {
-		import gate
-		reverse_proxy dashboard:80
+	reverse_proxy desk:7700 {
+		header_up X-Forwarded-Proto https
+		# Terminals, the code editor and the desktop stream are long-lived connections.
+		flush_interval -1
 	}
 }

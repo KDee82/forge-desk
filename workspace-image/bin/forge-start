@@ -1,0 +1,6 @@
+#!/bin/bash
+# Container entrypoint: tidy up after an unclean stop, then start every service.
+set -e
+rm -f /tmp/.X1-lock /tmp/.X11-unix/X1 /tmp/forge-supervisor.sock
+mkdir -p "$HOME/project" "$HOME/.config" "$HOME/.local/share"
+exec supervisord -n -c /etc/supervisor/supervisord.conf
